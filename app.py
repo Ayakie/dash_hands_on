@@ -13,9 +13,15 @@ import pandas as pd
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+#デフォルトのスタイルをアレンジ
+common_style={'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
+
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
+    html.H1('Dash Machine Learning Application'),
+    # 空白を加える
+    html.Br(),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -31,11 +37,16 @@ app.layout = html.Div([
             'borderRadius': '5px',
             'textAlign': 'center',
             'margin': '0 auto'
-        }
+        },
+        # Allow multiple files to be uploaded
+        # これないとエラーになる
+        multiple=True
     ),
     html.Div(id='output-data-upload'),
-], style={'textAlign': 'center', 'margin': '0 auto', 'font-family': 'Comic Sans MS'})
-
+],
+    # ここで全体Divのスタイルを反映
+    style=common_style
+)
 
 def parse_contents(contents, filename):
     content_type, content_string = contents.split(',')
@@ -68,7 +79,9 @@ def parse_contents(contents, filename):
                 'overflowY': 'scroll',
                 'maxHeight': '300'
             },
-            # 中身がオブジェクトなのでstyle_cell_conditionalが設定できない
+            style_header={
+                'fontWeight': 'bold',
+                'textAlign': 'center'}
         ),
 
         html.Hr(),  # horizontal line
@@ -90,10 +103,7 @@ def update_output(list_of_contents, list_of_names):
         children = [
             parse_contents(c, n) for c, n in
             zip(list_of_contents, list_of_names)]
-
         return children
-
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
