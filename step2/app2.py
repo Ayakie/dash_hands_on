@@ -1,27 +1,32 @@
+import base64
+import io
+
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
+import dash_bootstrap_components as dbc
 
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
 
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold
 
-# 単純なモデルを作り、残渣プロットおよびRMSEスコアを表示させる
-
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# やること：単純なモデルを作り、残渣プロットおよび予測スコアを表示させる
 
 #デフォルトのスタイルをアレンジ
 common_style={'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-df = pd.read_csv('housing_data.csv')
+app = dash.Dash(__name__)
+
+# 一つ上の階層のディレクトリであることに注意
+df = pd.read_csv('../housing_data.csv')
 X_train = df.iloc[:, :-1]
 y_train = df.iloc[:, -1]
 
@@ -44,8 +49,8 @@ for tr_idx, val_idx in kf.split(X_train):
     rmse_score = np.sqrt(mean_squared_error(y_val, y_val_pred))
     rmse_scores.append(rmse_score)
 
-    r2_score = r2_score(y_val, y_val_pred)
-    r2_scores.append(r2_score)
+    r2_score_ = r2_score(y_val, y_val_pred)
+    r2_scores.append(r2_score_)
 
 # 各foldのスコア平均
 avg_rmse_score = np.mean(rmse_scores)
@@ -56,8 +61,9 @@ app.layout = html.Div(
         html.H1('Dash Machine Learning Application'),
         # 空白を加える
         html.Br(),
-        html.H5(f'Average RMSE Score of Linear Regression model is {avg_rmse_score}'),
-        html.H5(f'R2 score is {avg_r2_score}'),
+
+        html.H3(f'Average RMSE Score of Linear Regression model is {avg_rmse_score}'),
+        html.H3(f'R2 score is {avg_r2_score}'),
         dcc.Graph(id='residual-plot',
                   figure={
                       'data': [go.Scatter(
