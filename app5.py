@@ -18,18 +18,16 @@ from sklearn.model_selection import KFold
 
 # やること：読み込んだデータをtrainデータとして読み込むように連携(Callback)させる
 
-#デフォルトのスタイルをアレンジ
-common_style={'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
+# デフォルトのスタイルをアレンジ
+common_style = {'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
 
 app = dash.Dash(__name__)
-
-# callbackがlayoutに含まれていない時の例外を避ける
-app.config.suppress_callback_exceptions = True
 
 # 予測に用いるモデルとインスタンスを定義した辞書
 models = {'Linear Regression': LinearRegression(),
           'Random Forest Regressor': RandomForestRegressor()}
 
+# データは読みこまない
 # df = pd.read_csv('housing_data.csv')
 
 app.layout = html.Div(
@@ -64,25 +62,24 @@ app.layout = html.Div(
         # アップロードしたファイルをデータテーブルとして表示させるところ
         html.Div(
 
-             children=[
-                 dash_table.DataTable(
-                     id='output-data-upload',
-                     column_selectable='multi',
-                     fixed_rows={'headers': True, 'data': 0},
-                     style_table={
-                         'overflowX': 'scroll',
-                         'overflowY': 'scroll',
-                         'maxHeight': '250px'
-                     },
-                     style_header={
-                         'fontWeight': 'bold',
-                         'textAlign': 'center'}
-                 )
-             ],
-             style={
-                 'height': '300px',
-
-             }),
+            children=[
+                dash_table.DataTable(
+                    id='output-data-upload',
+                    column_selectable='multi',
+                    fixed_rows={'headers': True, 'data': 0},
+                    style_table={
+                        'overflowX': 'scroll',
+                        'overflowY': 'scroll',
+                        'maxHeight': '250px'
+                    },
+                    style_header={
+                        'fontWeight': 'bold',
+                        'textAlign': 'center'}
+                )
+            ],
+            style={
+                'height': '300px'
+            }),
         html.Br(),
 
         # モデルを選択するドロップダウン
@@ -92,21 +89,19 @@ app.layout = html.Div(
             value='Linear Regression'
         ),
 
-        html.Div(
-            id='rmse-sentence',
-            # children=[f'Average RMSE Score of Linear Regression model is {avg_rmse_score}']
-        ),
-        html.Div(
-            id='r2-sentence',
-            # children=[f'R2 score is {avg_r2_score}']
-        ),
+        # モデルを学習させてスコアを表示
+        html.H3(id='rmse-sentence'),
+        html.H3(id='r2-sentence'),
+
+        # グラフの部分
         dcc.Graph(id='residual-plot',
                   style={'margin': '0px 100px'})
     ]),
     style=common_style
 )
 
-# アップロードしたファイルをデータフレームとして読み込むところ
+
+# アップロードしたファイルをデータフレームとして読み込むための関数
 def parse_contents(contents, filename):
     content_type, content_string = contents.split(',')
 
@@ -145,13 +140,22 @@ def update_output(list_of_contents, list_of_names):
     return [contents[0][0], contents[0][1]]
 
 
-# モデルを学習させる関数を別途用意する
-def modeling_function(key, dict_data):
-    '''
-    :param key, data: 辞書のキー, データテーブルの中身(list of dict)
-    :return: rmse, r2スコア, 残渣プロットに必要な予測値
-    '''
+# ドロップダウンで選択したモデリングで学習し、スコアと残渣プロットを返す
+@app.callback([Output('rmse-sentence', 'children'),
+               Output('r2-sentence', 'children'),
+               Output('residual-plot', 'figure')
+               ],
+              [Input('model-dropdown', 'value'),
+               Input('output-data-upload', 'data')]
+              )
+def update_result(model_name, dict_data):
+    # コールバックが起こるがまだデータはアップロードされていないので、例外処理を行う
+    if dict_data is None:
+        raise dash.exceptions.PreventUpdate
+
+    # アップロードしたデータテーブルの中身を読み込む
     df = pd.DataFrame(data=dict_data)
+
     X_train = df.iloc[:, :-1]
     y_train = df.iloc[:, -1]
 
@@ -165,7 +169,7 @@ def modeling_function(key, dict_data):
         y_tr, y_val = y_train.iloc[tr_idx], y_train.iloc[val_idx]
 
         # 学習の実行
-        model = models[key]
+        model = models[model_name]
         model.fit(x_tr, y_tr)
 
         y_val_pred = model.predict(x_val)
@@ -182,35 +186,12 @@ def modeling_function(key, dict_data):
     avg_rmse_score = np.mean(rmse_scores)
     avg_r2_score = np.mean(r2_scores)
 
-    return avg_rmse_score, avg_r2_score, y_val_pred, y_val, y_tr_pred, y_tr
-
-# ドロップダウンで選択したモデリングで学習し、スコアと残渣プロットを返す
-@app.callback([Output('rmse-sentence', 'children'),
-               Output('r2-sentence', 'children'),
-               Output('residual-plot', 'figure')
-               ],
-              [Input('model-dropdown', 'value'),
-               Input('output-data-upload', 'data')],
-               # [State('output-data-upload', 'children'),
-               #  ],
-              # [State('upload-data', 'filename')]
-              )
-def update_result(model_name, dict_data):
-    if dict_data is None:
-        raise dash.exceptions.PreventUpdate
-
-    avg_rmse_score = modeling_function(model_name, dict_data)[0]
-    avg_r2_score = modeling_function(model_name, dict_data)[1]
-    y_val_pred = modeling_function(model_name, dict_data)[2]
-    y_val = modeling_function(model_name, dict_data)[3]
-    y_tr_pred = modeling_function(model_name, dict_data)[4]
-    y_tr = modeling_function(model_name, dict_data)[5]
-
+    # グラフの記述
     figure = {
         'data': [
             go.Scatter(
-                x = y_tr_pred,
-                y = y_tr_pred-y_tr,
+                x=y_tr_pred,
+                y=y_tr_pred - y_tr,
                 mode='markers',
                 opacity=0.7,
                 marker={
@@ -221,7 +202,7 @@ def update_result(model_name, dict_data):
             ),
             go.Scatter(
                 x=y_val_pred,
-                y=y_val_pred-y_val,
+                y=y_val_pred - y_val,
                 mode='markers',
                 opacity=0.7,
                 marker={
@@ -237,14 +218,12 @@ def update_result(model_name, dict_data):
             yaxis={'title': 'Residuals'}
         )
     }
+    # rmse-sentence, r2-sentence, figureに送る実態を返す
     return [
-        html.H5(f'Average RMSE Score of {model_name} is {avg_rmse_score}'),
-        html.H5(f'R2 score is {avg_r2_score}'),
+        f'Average RMSE Score of {model_name} is {avg_rmse_score}',
+        f'R2 score is {avg_r2_score}',
         figure
     ]
-        # [html.H5(f'Average RMSE Score of {model_name} is {avg_rmse_score}'),
-        # html.H5(f'R2 score is {avg_r2_score}'),
-        # figure]
 
 
 if __name__ == '__main__':

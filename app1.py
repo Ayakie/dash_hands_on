@@ -21,10 +21,12 @@ from sklearn.model_selection import KFold
 
 # 全体に適用させるスタイルをアレンジ: フォントは各自好きなの設定してみてもいいかも.(https://w3g.jp/sample/css/font-family#japanese)
 # 欧文はフォントが豊富で楽しいので今回のアプリも英語で記述しています
-common_style={'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
+common_style = {'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
 
+# アプリの実態(インスタンス)を定義
 app = dash.Dash(__name__)
 
+# アプリの見た目の記述
 app.layout = html.Div([
     # タイトル
     html.H1('Dash Machine Learning Application'),

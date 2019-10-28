@@ -18,18 +18,19 @@ from sklearn.model_selection import KFold
 
 # やること：モデルを選択するドロップダウンを作って、コールバックにより選択したモデルを学習させる
 
-#デフォルトのスタイルをアレンジ
-common_style={'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
+# デフォルトのスタイルをアレンジ
+common_style = {'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
 
+# アプリの実態(インスタンス)を定義
 app = dash.Dash(__name__)
 
 # 予測に用いるモデルとインスタンスを定義した辞書
 models = {'Linear Regression': LinearRegression(),
           'Random Forest Regressor': RandomForestRegressor()}
 
-# 一つ上の階層のディレクトリであることに注意
-df = pd.read_csv('../housing_data.csv')
+df = pd.read_csv('housing_data.csv')
 
+# アプリの見た目の記述
 app.layout = html.Div(
     html.Div([
         html.H1('Dash Machine Learning Application'),
@@ -43,8 +44,11 @@ app.layout = html.Div(
             value='Linear Regression'
         ),
 
+        # モデルを学習させてスコアを表示
         html.H3(id='rmse-sentence'),
         html.H3(id='r2-sentence'),
+
+        # グラフの部分
 
         dcc.Graph(id='residual-plot',
                   style={'margin': '0px 100px'})
@@ -52,12 +56,15 @@ app.layout = html.Div(
     style=common_style
 )
 
-#  モデルを学習させる関数を別途用意する
-def modeling_function(key):
-    '''
-    :param key: 辞書のキー
-    :return: rmse, r2スコア, 残渣プロットに必要な予測値
-    '''
+
+# ドロップダウンで選択したモデリングで学習し、スコアと残渣プロットを返す
+@app.callback([
+    Output('rmse-sentence', 'children'),
+    Output('r2-sentence', 'children'),
+    Output('residual-plot', 'figure')],
+    [Input('model-dropdown', 'value')]
+)
+def update_result(model_name):
     X_train = df.iloc[:, :-1]
     y_train = df.iloc[:, -1]
 
@@ -71,7 +78,7 @@ def modeling_function(key):
         y_tr, y_val = y_train.iloc[tr_idx], y_train.iloc[val_idx]
 
         # 学習の実行
-        model = models[key]
+        model = models[model_name]
         model.fit(x_tr, y_tr)
 
         y_val_pred = model.predict(x_val)
@@ -88,29 +95,12 @@ def modeling_function(key):
     avg_rmse_score = np.mean(rmse_scores)
     avg_r2_score = np.mean(r2_scores)
 
-    return avg_rmse_score, avg_r2_score, y_val_pred, y_val, y_tr_pred, y_tr
-
-# ドロップダウンで選択したモデリングで学習し、スコアと残渣プロットを返す
-@app.callback([Output('rmse-sentence', 'children'),
-               Output('r2-sentence', 'children'),
-               Output('residual-plot', 'figure')
-               ],
-              [Input('model-dropdown', 'value')]
-              )
-def update_result(model_name):
-
-    avg_rmse_score = modeling_function(model_name)[0]
-    avg_r2_score = modeling_function(model_name)[1]
-    y_val_pred = modeling_function(model_name)[2]
-    y_val = modeling_function(model_name)[3]
-    y_tr_pred = modeling_function(model_name)[4]
-    y_tr = modeling_function(model_name)[5]
-
+    # グラフの記述
     figure = {
         'data': [
             go.Scatter(
-                x = y_tr_pred,
-                y = y_tr_pred-y_tr,
+                x=y_tr_pred,
+                y=y_tr_pred - y_tr,
                 mode='markers',
                 opacity=0.7,
                 marker={
@@ -121,7 +111,7 @@ def update_result(model_name):
             ),
             go.Scatter(
                 x=y_val_pred,
-                y=y_val_pred-y_val,
+                y=y_val_pred - y_val,
                 mode='markers',
                 opacity=0.7,
                 marker={
@@ -137,11 +127,13 @@ def update_result(model_name):
             yaxis={'title': 'Residuals'}
         )
     }
+    # rmse-sentence, r2-sentence, figureに送る実態を返す
     return [
-        html.H5(f'Average RMSE Score of {model_name} is {avg_rmse_score}'),
-        html.H5(f'R2 score is {avg_r2_score}'),
+        f'Average RMSE Score of {model_name} is {avg_rmse_score}',
+        f'R2 score is {avg_r2_score}',
         figure
     ]
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
