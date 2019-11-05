@@ -16,7 +16,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold
 
-# やること：モデルを選択するドロップダウンを作って、コールバックにより選択したモデルを学習させる
+# やること：モデルを選択するドロップダウンを作って、選択したモデルに応じて出力結果が変わるような動的なページを作る
 
 # デフォルトのスタイルをアレンジ
 common_style = {'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
@@ -35,6 +35,26 @@ app.layout = html.Div(
     html.Div([
         html.H1('Dash Machine Learning Application'),
         # 空白を加える
+        html.Br(),
+
+        # ファイルアップロードの部分
+        dcc.Upload(
+            id='upload-data',
+            children=html.Div([
+                'Drag and Drop or ',
+                html.A('Select Files')
+            ]),
+            style={
+                'width': '60%',
+                'height': '60px',
+                'lineHeight': '60px',
+                'borderWidth': '1px',
+                'borderStyle': 'dashed',
+                'borderRadius': '5px',
+                'textAlign': 'center',
+                'margin': '0 auto'
+            }
+        ),
         html.Br(),
 
         # モデルを選択するドロップダウンを追加する

@@ -20,3 +20,10 @@ https://raw.githubusercontent.com/rasbt/python-machine-learning-book-2nd-edition
 - B: 1000(Bk-0.63)<sup>2</sup>として計算(Bkはアフリカ系アメリカ人居住者の割合(人口単位))
 - LSTAT: 低所得者の割合
 - MEDV(= ターゲット変数): 住宅価格の中央値(単位1,000ドル) 
+
+### 流れ
+Step1. pyファイルのみでWebページを出力させてみる→ CSSを書いて(common_style)文字や配置をいい感じにする<br>
+Step2. 単純なモデルを作り、残渣プロットおよび予測スコアを表示させる<br>
+Step3. モデルを選択するドロップダウンを作って、選択したモデルに応じて出力結果が変わるような動的なページを作る<br>
+Step4.　ファイルをアップロードし、データフレームとして表示させる<br>
+Step5. 読み込んだデータをtrainデータとして読み込むように連携(Callback)させる
