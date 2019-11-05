@@ -13,14 +13,16 @@ import plotly.graph_objs as go
 
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
+
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold
 
-# やること：ファイルをアップロードし、データフレームとして表示させる
-# https://dash.plot.ly/dash-core-components/upload
+# モデルを加えて、よりお洒落にしてみた
 
 # デフォルトのスタイルをアレンジ
 common_style = {'font-family': 'Comic Sans MS', 'textAlign': 'center', 'margin': '0 auto'}
+
 # アップロード部分のスタイル
 upload_style={
     'width': '60%',
@@ -33,24 +35,24 @@ upload_style={
     'margin': '0 auto'
             }
 
-# アプリの実態(インスタンス)を定義
 app = dash.Dash(__name__)
 
 # 予測に用いるモデルとインスタンスを定義した辞書
 models = {'Linear Regression': LinearRegression(),
-          'Random Forest Regressor': RandomForestRegressor()}
+          'Random Forest Regressor': RandomForestRegressor(),
+          'XGboost': XGBRegressor()
+          }
 
-# 今はアップロード機能をつけているだけなので機械学習するためにデータは読み込む必要がある
-df = pd.read_csv('housing_data.csv')
+# データは読みこまない
+# df = pd.read_csv('housing_data.csv')
 
-# アプリの見た目を記述
 app.layout = html.Div(
     html.Div([
         html.H1('Dash Machine Learning Application'),
         # 空白を加える
         html.Br(),
 
-        # ファイルアップロード部分
+        # ファイルアップロードの部分を作る
         dcc.Upload(
             id='upload-data',
             children=html.Div([
@@ -64,23 +66,27 @@ app.layout = html.Div(
         ),
         html.Br(),
 
-        # アップロードしたファイルをデータテーブルとして表示させる部分
+        # アップロードしたファイルをデータテーブルとして表示させるところ
         html.Div(
-            children=[
-                dash_table.DataTable(
-                    id='output-data-upload',
-                    column_selectable='multi',
-                    fixed_rows={'headers': True, 'data': 0},
-                    style_table={
-                        'overflowX': 'scroll',
-                        'overflowY': 'scroll',
-                        'maxHeight': '250px'
-                    },
-                    style_header={
-                        'fontWeight': 'bold',
-                        'textAlign': 'center'}
-                )
-            ],
+            dcc.Loading(
+                id='loading-1',
+                children=[
+                    dash_table.DataTable(
+                        id='output-data-upload',
+                        column_selectable='multi',
+                        fixed_rows={'headers': True, 'data': 0},
+                        style_table={
+                            'overflowX': 'scroll',
+                            'overflowY': 'scroll',
+                            'maxHeight': '250px'
+                        },
+                        style_header={
+                            'fontWeight': 'bold',
+                            'textAlign': 'center'}
+                    )
+                ],
+                type='cube'
+            ),
             style={
                 'height': '300px'
             }),
@@ -93,13 +99,21 @@ app.layout = html.Div(
             value='Linear Regression'
         ),
 
-        # モデルを学習させてスコアを表示
-        html.H3(id='rmse-sentence'),
-        html.H3(id='r2-sentence'),
+        html.Div(
+            dcc.Loading(
+                id='loading-2',
+                children=[
+                    # モデルを学習させてスコアを表示
+                    html.H3(id='rmse-sentence'),
+                    html.H3(id='r2-sentence'),
 
-        # グラフの部分
-        dcc.Graph(id='residual-plot',
-                  style={'margin': '0px 100px'})
+                    # グラフの部分
+                    dcc.Graph(id='residual-plot',
+                              style={'margin': '0px 100px'})
+                ],
+                type='graph'
+            ),
+        ),
     ]),
     style=common_style
 )
@@ -127,7 +141,6 @@ def parse_contents(contents, filename):
     data_ = df.to_dict('records')
     columns_ = [{'name': i, 'id': i} for i in df.columns]
 
-    # データフレームの中身を送る
     return [data_, columns_]
 
 
@@ -140,19 +153,27 @@ def update_output(list_of_contents, list_of_names):
     if list_of_contents is None:
         raise dash.exceptions.PreventUpdate
 
-        contents = [parse_contents(c, n) for c, n in zip(list_of_contents, list_of_names)]
+    contents = [parse_contents(c, n) for c, n in zip(list_of_contents, list_of_names)]
 
-        return [contents[0][0], contents[0][1]]
+    return [contents[0][0], contents[0][1]]
 
 
 # ドロップダウンで選択したモデリングで学習し、スコアと残渣プロットを返す
-@app.callback([
-    Output('rmse-sentence', 'children'),
-    Output('r2-sentence', 'children'),
-    Output('residual-plot', 'figure')],
-    [Input('model-dropdown', 'value')]
-)
-def update_result(model_name):
+@app.callback([Output('rmse-sentence', 'children'),
+               Output('r2-sentence', 'children'),
+               Output('residual-plot', 'figure')
+               ],
+              [Input('model-dropdown', 'value'),
+               Input('output-data-upload', 'data')]
+              )
+def update_result(model_name, dict_data):
+    # コールバックが起こるがまだデータはアップロードされていないので、例外処理を行う
+    if dict_data is None:
+        raise dash.exceptions.PreventUpdate
+
+    # アップロードしたデータテーブルの中身を読み込む
+    df = pd.DataFrame(data=dict_data)
+
     X_train = df.iloc[:, :-1]
     y_train = df.iloc[:, -1]
 
