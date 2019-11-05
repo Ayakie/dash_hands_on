@@ -25,5 +25,5 @@ https://raw.githubusercontent.com/rasbt/python-machine-learning-book-2nd-edition
 Step1. pyファイルのみでWebページを出力させてみる→ CSSを書いて(common_style)文字や配置をいい感じにする<br>
 Step2. 単純なモデルを作り、残渣プロットおよび予測スコアを表示させる<br>
 Step3. モデルを選択するドロップダウンを作って、選択したモデルに応じて出力結果が変わるような動的なページを作る<br>
-Step4.　ファイルをアップロードし、データフレームとして表示させる<br>
+Step4. ファイルをアップロードし、データフレームとして表示させる<br>
 Step5. 読み込んだデータをtrainデータとして読み込むように連携(Callback)させる
