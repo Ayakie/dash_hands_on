@@ -26,4 +26,7 @@ Step1. pyファイルのみでWebページを出力させてみる→ CSSを書�
 Step2. 単純なモデルを作り、残渣プロットおよび予測スコアを表示させる<br>
 Step3. モデルを選択するドロップダウンを作って、選択したモデルに応じて出力結果が変わるような動的なページを作る<br>
 Step4. ファイルをアップロードし、データフレームとして表示させる<br>
-Step5. 読み込んだデータをtrainデータとして読み込むように連携(Callback)させる
+Step5. 読み込んだデータをtrainデータとして読み込むように連携(Callback)させる<br>
+app6: おまけ
+
+![Screen Recording 2019-11-06 at 1 56 57 mov](https://user-images.githubusercontent.com/49149391/68228815-6bcdb280-0039-11ea-9612-3e52a5af0f4b.gif)
