@@ -140,9 +140,9 @@ def update_output(list_of_contents, list_of_names):
     if list_of_contents is None:
         raise dash.exceptions.PreventUpdate
 
-        contents = [parse_contents(c, n) for c, n in zip(list_of_contents, list_of_names)]
+    contents = [parse_contents(c, n) for c, n in zip(list_of_contents, list_of_names)]
 
-        return [contents[0][0], contents[0][1]]
+    return [contents[0][0], contents[0][1]]
 
 
 # ドロップダウンで選択したモデリングで学習し、スコアと残渣プロットを返す
