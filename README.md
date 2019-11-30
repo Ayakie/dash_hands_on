@@ -1,6 +1,9 @@
 # dash_hands_on
 研究室内向けのDashを使ったWebアプリケーションハンズオン
 
+### 解説ブログ
+https://wimper-1996.hatenablog.com/entry/2019/10/28/dash_machine_learning1
+
 ### 用いるデータについて
 参考文献：[第二版] Python機械学習プログラミング
 達人データサイエンティストによる理論と実践
